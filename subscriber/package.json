@@ -1,0 +1,11 @@
+{
+  "name": "aws-amazonmq-lambda-subscriber",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "jkahn@",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "stompit": "^0.25.0"
+  }
+}

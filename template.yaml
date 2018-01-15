@@ -1,0 +1,161 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Transform: 'AWS::Serverless-2016-10-31'
+
+Description: An AWS Serverless Specification template describing your function.
+
+Parameters:
+  AmazonMQHost:
+    Type: String
+    Default: ''
+    Description: Host name of your Amazon MQ instance
+
+  AmazonMQLogin:
+    Type: String
+    Default: ''
+    Description: Login / username for your Amazon MQ instance
+
+  AmazonMQPassword:
+    Type: String
+    Default: ''
+    NoEcho: true
+    Description: Password for your Amazon MQ instance
+
+  AmazonMQQueueName:
+    Type: String
+    Default: SAMPLE_QUEUE
+    Description: Name of queue
+
+  AmazonMQSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security Group ID for Amazon MQ broker
+
+Resources:
+  SubscriberFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: subscriber/
+      Handler: index.handler
+      Runtime: nodejs6.10
+      Role: !GetAtt SubscriberRole.Arn
+      Description: 'Polls Amazon MQ broker for messages and pushes to worker function'
+      Timeout: 15
+      Environment:
+        Variables:
+          HOST: !Ref AmazonMQHost
+          LOGIN: !Ref AmazonMQLogin
+          PASSWORD: !Ref AmazonMQPassword
+          QUEUE_NAME: !Ref AmazonMQQueueName
+          WORKER_FUNCTION: !Ref WorkerFunction
+      Events:
+        Timer:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+
+  WorkerFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: worker/
+      Handler: index.handler
+      Runtime: nodejs6.10
+      Role: !GetAtt WorkerRole.Arn
+      Description: 'Writes incoming message to DynamoDB'
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref MessagesTable
+
+  MessagesTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: uuid
+        Type: String
+
+  # --------------
+  
+  # add inbound to STOMP for provided security group
+  BrokerSGIngressFromLambda:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref AmazonMQSecurityGroupId
+      IpProtocol: tcp
+      FromPort: 61614
+      ToPort: 61614
+      CidrIp: '0.0.0.0/0'
+
+  # --------------
+  
+  SubscriberRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/AmazonMQLambda/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Sid: AllowLambdaServiceToAssumeRole
+            Effect: Allow
+            Action: 
+              - sts:AssumeRole
+            Principal:
+              Service: 
+                - lambda.amazonaws.com
+
+  SubscriberPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AmazonMQLambdaSubscriberPolicy
+      Roles:
+        - !Ref SubscriberRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement: 
+          -
+            Effect:   "Allow"
+            Resource: !GetAtt WorkerFunction.Arn
+            Action:
+              - "lambda:InvokeFunction"
+
+  WorkerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/AmazonMQLambda/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Sid: AllowLambdaServiceToAssumeRole
+            Effect: Allow
+            Action: 
+              - sts:AssumeRole
+            Principal:
+              Service: 
+                - lambda.amazonaws.com
+
+  WorkerPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AmazonMQLambdaWorkerPolicy
+      Roles:
+        - !Ref WorkerRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement: 
+          -
+            Effect:   "Allow"
+            Resource: !GetAtt MessagesTable.Arn
+            Action:
+              - "dynamodb:PutItem"
+
+Outputs:
+  MessagesTable:
+    Description: Name of messages table
+    Value: !Ref MessagesTable
+    
