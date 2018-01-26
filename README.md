@@ -62,13 +62,20 @@ We will use the [AWS Serverless Application Model](https://github.com/awslabs/se
                 --output-template-file packaged.yaml
 	```
 
-4. A single-instance broker launched without any changes to the default network and security configuration will be associated with one Security Group. In addition to the Security Group ID, you will also need the username and password you provided when creating the broker to deploy our Lambda functions and other resources:
+4. Next, deploy the CloudFormation stack, including the following parameters:
+
+	* `AmazonMQHost` - your broker endpoint, e.g. <broker_id>.mq.us-east-2.amazonaws.com (note: do not incude the protocol or port)
+	* `AmazonMQLogin` - username provided when creating your broker (e.g. master)
+	* `AmazonMQPassword` - password provided when creating your broker
+	* `AmazonMQQueueName` - name of your broker's queue, we use `SAMPLE_QUEUE` here
+	* `AmazonMQSecurityGroupId` - security group id, as captured above (e.g. sg-12345678)
+
 
 	```
 	$ aws cloudformation deploy --template-file packaged.yaml \
 	            --stack-name aws-amazonmq-sample \
 	            --capabilities CAPABILITY_IAM \
-	            --parameter-overrides AmazonMQHost=<BROKER_ENDPOINT> \
+	            --parameter-overrides AmazonMQHost=<AMAZONMQ_BROKER_ENDPOINT> \
                                       AmazonMQLogin=<AMAZONMQ_USERNAME> \
                                       AmazonMQPassword=<AMAZONMQ_PASSWORD> \
                                       AmazonMQQueueName=SAMPLE_QUEUE \
@@ -83,7 +90,7 @@ We will use the [AWS Serverless Application Model](https://github.com/awslabs/se
 Once the CloudFormation stack is complete, we can send a test message using the ActiveMQ console.
 
 
-1. Open the ActiveMQ Management Console, available at https://<BROKER_ENDPOINT>:8162.
+1. Open the ActiveMQ Management Console, available at https://<BROKER_ENDPOINT>:8162. If you have trouble accessing the console, modify its security group to allow inbound traffic from your IP address.
 
 2. Click the link "Manage ActiveMQ broker" and enter the username and password from when you created the broker.
 
