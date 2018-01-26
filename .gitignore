@@ -1,5 +1,5 @@
 node_modules
 .DS_Store
 deploy.sh
-packaged.yml
+packaged.yaml
 package-lock.json
