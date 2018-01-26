@@ -17,8 +17,6 @@
 const stomp = require('stompit')
 const AWS = require('aws-sdk')
 
-AWS.config.update({ region: 'us-west-2' })
-
 let lambda = new AWS.Lambda()
 
 const QUEUE_NAME = process.env.QUEUE_NAME

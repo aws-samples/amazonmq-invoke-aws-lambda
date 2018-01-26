@@ -17,7 +17,6 @@
 const uuid = require('uuid/v4')
 const AWS = require('aws-sdk')
 const util = require('util')
-AWS.config.update({ region: 'us-west-2' })
 
 const ddb = new AWS.DynamoDB.DocumentClient()
 const MESSAGE_TABLE = process.env.TABLE_NAME
