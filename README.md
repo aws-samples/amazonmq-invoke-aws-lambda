@@ -2,7 +2,7 @@
 
 This project is an example of one approach to invoking AWS Lambda from Queues and Topics managed by Amazon MQ brokers. This and other similar patterns can be useful in integrating legacy systems that leverage common APIs such as JMS with serverless architectures.
 
-Our solution makes use of AWS CloudWatch Events to trigger a Lambda function that polls for messages on a queue. Messages are then sent to a second Lambda function that writes the message to an Amazon DynamoDB table. Further details can be found in our accompanying [blog post](https://aws.amazon.com/blogs/compute/).
+Our solution makes use of AWS CloudWatch Events to trigger a Lambda function that polls for messages on a queue. Messages are then sent to a second Lambda function that writes the message to an Amazon DynamoDB table. Further details can be found in our accompanying [blog post](https://aws.amazon.com/blogs/compute/invoking-aws-lambda-from-amazon-mq/).
 
 ![Amazon MQ to Lambda Integration](amazonmq-invoke-lambda.png)
 
